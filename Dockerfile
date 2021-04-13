@@ -1,4 +1,4 @@
-FROM golang:alpine AS build_base
+FROM golang:1.16-alpine AS build_base
 #ENV GOARCH arm64
 #ENV GOARCH amd64
 RUN apk add --no-cache gcc ca-certificates libc-dev
