@@ -13,7 +13,6 @@ import (
 	"github.com/umahmood/haversine"
 
 	"github.com/librespeed/speedtest/config"
-	"github.com/librespeed/speedtest/results"
 )
 
 var (
@@ -45,8 +44,8 @@ func getIPInfoURL(address string) string {
 	return ipInfoURL
 }
 
-func getIPInfo(addr string) results.IPInfoResponse {
-	var ret results.IPInfoResponse
+func getIPInfo(addr string) IPInfoResponse {
+	var ret IPInfoResponse
 	resp, err := http.DefaultClient.Get(getIPInfoURL(addr))
 	if err != nil {
 		log.Errorf("Error getting response from ipinfo.io: %s", err)
@@ -75,7 +74,7 @@ func SetServerLocation(conf *config.Config) {
 		return
 	}
 
-	var ret results.IPInfoResponse
+	var ret IPInfoResponse
 	resp, err := http.DefaultClient.Get(getIPInfoURL(""))
 	if err != nil {
 		log.Errorf("Error getting repsonse from ipinfo.io: %s", err)

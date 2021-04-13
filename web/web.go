@@ -18,7 +18,6 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/librespeed/speedtest/config"
-	"github.com/librespeed/speedtest/results"
 )
 
 const (
@@ -55,14 +54,6 @@ func ListenAndServe(conf *config.Config) error {
 	r.Get("/backend/garbage", garbage)
 	r.Get("/getIP", getIP)
 	r.Get("/backend/getIP", getIP)
-	r.Get("/results", results.DrawPNG)
-	r.Get("/results/", results.DrawPNG)
-	r.Get("/backend/results", results.DrawPNG)
-	r.Get("/backend/results/", results.DrawPNG)
-	r.Post("/results/telemetry", results.Record)
-	r.Post("/backend/results/telemetry", results.Record)
-	r.HandleFunc("/stats", results.Stats)
-	r.HandleFunc("/backend/stats", results.Stats)
 
 	// PHP frontend default values compatibility
 	r.HandleFunc("/empty.php", empty)
@@ -71,10 +62,6 @@ func ListenAndServe(conf *config.Config) error {
 	r.Get("/backend/garbage.php", garbage)
 	r.Get("/getIP.php", getIP)
 	r.Get("/backend/getIP.php", getIP)
-	r.Post("/results/telemetry.php", results.Record)
-	r.Post("/backend/results/telemetry.php", results.Record)
-	r.HandleFunc("/stats.php", results.Stats)
-	r.HandleFunc("/backend/stats.php", results.Stats)
 
 	go listenProxyProtocol(conf, r)
 	return http.ListenAndServe(addr, r)
@@ -152,7 +139,7 @@ func garbage(w http.ResponseWriter, r *http.Request) {
 }
 
 func getIP(w http.ResponseWriter, r *http.Request) {
-	var ret results.Result
+	var ret Result
 
 	clientIP := r.RemoteAddr
 	clientIP = strings.ReplaceAll(clientIP, "::ffff:", "")
