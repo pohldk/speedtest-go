@@ -1,14 +1,18 @@
 package web
 
 import (
+	"context"
 	"encoding/json"
 	"io"
 	"io/ioutil"
 	"net"
 	"net/http"
+	"os"
+	"os/signal"
 	"regexp"
 	"strconv"
 	"strings"
+	"syscall"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -30,7 +34,7 @@ var (
 	randomData = getRandomData(chunkSize)
 )
 
-func ListenAndServe(conf *config.Config) error {
+func ListenAndServe(conf *config.Config) {
 	r := chi.NewRouter()
 	r.Use(middleware.RealIP)
 	r.Use(middleware.GetHead)
@@ -65,7 +69,37 @@ func ListenAndServe(conf *config.Config) error {
 	r.Get("/backend/getIP.php", getIP)
 
 	go listenProxyProtocol(conf, r)
-	return http.ListenAndServe(addr, r)
+
+	srv := &http.Server{
+		Addr:    addr,
+		Handler: r,
+	}
+
+	idleConnsClosed := make(chan struct{})
+	go func() {
+		sigint := make(chan os.Signal, 1)
+
+		// interrupt signal sent from terminal
+		signal.Notify(sigint, os.Interrupt)
+		// sigterm signal sent from kubernetes
+		signal.Notify(sigint, syscall.SIGTERM)
+
+		<-sigint
+
+		// We received an interrupt signal, shut down.
+		if err := srv.Shutdown(context.Background()); err != nil {
+			// Error from closing listeners, or context timeout:
+			log.Printf("HTTP server Shutdown: %v", err)
+		}
+		close(idleConnsClosed)
+	}()
+
+	if err := srv.ListenAndServe(); err != http.ErrServerClosed {
+		// Error starting or closing listener:
+		log.Printf("HTTP server ListenAndServe: %v", err)
+	}
+
+	<-idleConnsClosed
 }
 
 func listenProxyProtocol(conf *config.Config, r *chi.Mux) {
