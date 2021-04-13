@@ -34,6 +34,7 @@ func ListenAndServe(conf *config.Config) error {
 	r := chi.NewRouter()
 	r.Use(middleware.RealIP)
 	r.Use(middleware.GetHead)
+	r.Use(middleware.Heartbeat("/health"))
 
 	cs := cors.New(cors.Options{
 		AllowedOrigins: []string{"*"},
